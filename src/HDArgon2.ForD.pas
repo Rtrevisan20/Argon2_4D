@@ -11,12 +11,12 @@ type
     class var FMemory: integer;
     class var FParallelism: integer;
     class function GenerateSalt(Size: Integer): AnsiString;
+    class function ErrorMessage(const aCode: integer): string;
   public
     class function GenerateHash(const aPass: string): string;
     class function VerifyPassword(const aHash, aPass: string): boolean;
     class function IdHashEncoded(const aPass: string): string;
     class function HashEncodedVerify(const aHash, aPass: string): boolean;
-    class function ErrorMessage(const aCode: integer): string;
 
     class property Iterations: integer read FIterations write FIterations;
     class property Memory: integer read FMemory write FMemory;
@@ -79,8 +79,8 @@ function argon2_error_message(
 ): PAnsiChar; stdcall; external 'libargon2.dll';
 
 const
-  SALT_LEN        = 16;  //Tamanho do Salt Aleatorio
-  HASH_LEN        = 32;  //Tamanho do Hash Gerado
+  SALT_LEN        = 32;  //Tamanho do Salt Aleatorio
+  HASH_LEN        = 64;  //Tamanho do Hash Gerado
   ARGON2_VERSION  = $13; //Varsao do Argon2
   ARGON2_d        = 0;   //Tipo do Argon2
   ARGON2_i        = 1;   //Tipo do Argon2
@@ -157,7 +157,7 @@ begin
   );
 
   if Res <> 0 then
-    raise Exception.Create('Hash não gerado!');
+    raise Exception.Create(ErrorMessage(Res));
 
   Result := string(AnsiString(Encoded));
 end;
