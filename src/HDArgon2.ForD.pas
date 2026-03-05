@@ -79,8 +79,8 @@ function argon2_error_message(
 ): PAnsiChar; stdcall; external 'libargon2.dll';
 
 const
-  SALT_LEN        = 32;  //Tamanho do Salt Aleatorio
-  HASH_LEN        = 64;  //Tamanho do Hash Gerado
+  SALT_LEN        = 16;  //Tamanho do Salt Aleatorio
+  HASH_LEN        = 32;  //Tamanho do Hash Gerado
   ARGON2_VERSION  = $13; //Varsao do Argon2
   ARGON2_d        = 0;   //Tipo do Argon2
   ARGON2_i        = 1;   //Tipo do Argon2
