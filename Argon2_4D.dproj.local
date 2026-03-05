@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+  <Transactions>
+    <Transaction>2026/03/05 16:20:07.363,=rtl.dcp</Transaction>
+    <Transaction>2026/03/05 16:20:35.248,D:\Recursos GitHub\HDArgon2\Argon2_4D.dproj=C:\Users\renat\OneDrive\Documentos\Embarcadero\Studio\Projects\Package1.dproj</Transaction>
+    <Transaction>2026/03/05 16:21:24.927,=D:\Recursos GitHub\HDArgon2\Unit1.pas</Transaction>
+    <Transaction>2026/03/05 16:21:48.228,D:\Recursos GitHub\HDArgon2\src\HDArgon2.Ford.pas=D:\Recursos GitHub\HDArgon2\Unit1.pas</Transaction>
+    <Transaction>2026/03/05 16:22:20.542,D:\Recursos GitHub\HDArgon2\src\HDArgon2.ForDE.pas=D:\Recursos GitHub\HDArgon2\src\HDArgon2.Ford.pas</Transaction>
+    <Transaction>2026/03/05 16:22:23.480,D:\Recursos GitHub\HDArgon2\src\HDArgon2.ForD.pas=D:\Recursos GitHub\HDArgon2\src\HDArgon2.ForDE.pas</Transaction>
+  </Transactions>
+</BorlandProject>
