@@ -79,6 +79,8 @@ HashEncodedVerify(const aHash, aPass: string): boolean;
 
 ## Como usar
 
+A DLL testada foi compilada no dia 05/03/2026 na arquitetura X64. Copie a DLL libargon2.dll para a pasta do seu executável do seu sistema, e é só usar a biblioteca.
+
 - Gerando o hash
 
 ```delphi
@@ -95,10 +97,3 @@ HashEncodedVerify(const aHash, aPass: string): boolean;
     ShowMessage('Senha está correta') else
     ShowMessage('A senha não est correta');
 ```
-
-Nesta implementação é gerado um salt aleatório para cada hash gerado. Dentro da Unit HDArgon2.ForD existe algumas constantes que podem ser modificadas para a sua comodidade.
-
-- SALT_LEN = 32; //Tamanho do Salt Aleatório
-- HASH_LEN = 64; //Tamanho do Hash a ser Gerado
-
-Ambas as constantes podem ser modificadas aumentando a segurança do hash gerado.
