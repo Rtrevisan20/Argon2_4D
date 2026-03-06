@@ -33,6 +33,6 @@ requires
   rtl;
 
 contains
-  HDArgon2.ForD in 'src\HDArgon2.ForD.pas';
+  HDArgon24D in 'src\HDArgon24D.pas';
 
 end.

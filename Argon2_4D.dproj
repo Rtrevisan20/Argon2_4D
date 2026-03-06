@@ -133,7 +133,7 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="rtl.dcp"/>
-        <DCCReference Include="src\HDArgon2.ForD.pas"/>
+        <DCCReference Include="src\HDArgon24D.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

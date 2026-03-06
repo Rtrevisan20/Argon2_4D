@@ -32,7 +32,7 @@ As partes da string são:
 
 ## HDArgon2
 
-HDArgon2 é uma implementação da DLL do Argon2. DLL foi gerada com os arquivos do repositório https://github.com/P-H-C/phc-winner-argon2.
+HDArgon2 é uma implementação da DLL do Argon2 implementada no repositório https://github.com/P-H-C/phc-winner-argon2.
 
 Support: rtinformatica.ti@gmail.com
 
@@ -55,7 +55,7 @@ Adicione as seguintes pastas ao seu projeto, em _Project > Options > Delphi Comp
 #### **Uses necessárias**
 
 ```
-uses HDArgon2.ForD;
+uses HDArgon24D;
 ```
 
 ## **Funções e propriedades**

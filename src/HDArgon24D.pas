@@ -1,4 +1,4 @@
-unit HDArgon2.ForD;
+unit HDArgon24D;
 
 interface
 
