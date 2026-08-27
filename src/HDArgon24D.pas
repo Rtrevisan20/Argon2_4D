@@ -1,4 +1,4 @@
-unit HDArgon24D;
+ï»¿unit HDArgon24D;
 
 interface
 
@@ -205,7 +205,7 @@ begin
       or (not Assigned(argon2id_hash_encoded_proc)) or (not Assigned(argon2id_verify_proc))
       or (not Assigned(argon2_encodedlen_proc)) or (not Assigned(argon2_error_message_proc)) then
       raise Exception.Create('A biblioteca ' + ARGON2_API_LIB
-        + ' não contém todas as funçõs esperadas.');
+        + ' nï¿½o contï¿½m todas as funï¿½ï¿½s esperadas.');
 
     FArgon2Loaded := True;
     Result := True;
@@ -318,6 +318,62 @@ begin
   Result := argon2_error_message_proc(error_code);
 end;
 
+function SecureRandomBytes(Buff: Pointer; Count: Integer): Boolean;
+{$IF Defined(MSWINDOWS)}
+type
+  TBCryptGenRandomProc = function(
+      hAlgorithm: NativeUInt;
+      pbBuffer: PByte;
+      cbBuffer: DWORD;
+      dwFlags: DWORD
+  ): Integer; stdcall;
+const
+  BCRYPT_USE_SYSTEM_PREFERRED_RNG = $00000002;
+var
+  BCryptLib: HMODULE;
+  BCryptGenRandom: TBCryptGenRandomProc;
+begin
+  Result := False;
+  if Count < 0 then
+    Exit;
+  BCryptLib := SafeLoadLibrary('bcrypt.dll');
+  if BCryptLib = 0 then
+    Exit;
+  try
+    @BCryptGenRandom := GetProcAddress(BCryptLib, 'BCryptGenRandom');
+    if Assigned(BCryptGenRandom) then
+      Result := BCryptGenRandom(0, PByte(Buff), DWORD(Count), BCRYPT_USE_SYSTEM_PREFERRED_RNG) = 0;
+  finally
+    FreeLibrary(BCryptLib);
+  end;
+end;
+{$ELSE}
+const
+  INVALID_HANDLE = THandle(-1);
+var
+  F: THandle;
+  N, R: Integer;
+begin
+  Result := False;
+  F := FileOpen('/dev/urandom', fmOpenRead or fmShareDenyNone);
+  if F = INVALID_HANDLE then
+    Exit;
+  try
+    N := 0;
+    while N < Count do
+    begin
+      R := FileRead(F, PByte(Buff)[N], Count - N);
+      if R <= 0 then
+        Exit;
+      Inc(N, R);
+    end;
+    Result := True;
+  finally
+    FileClose(F);
+  end;
+end;
+{$ENDIF}
+
 class function TArgon2.ErrorMessage(const aCode: integer): string;
 begin
   Result := string(argon2_error_message(aCode));
@@ -354,12 +410,10 @@ begin
 end;
 
 class function TArgon2.GenerateSalt(Size: Integer): AnsiString;
-var
-  I: Integer;
 begin
   SetLength(Result, Size);
-  for I := 1 to Size do
-    Result[I] := AnsiChar(Random(256));
+  if (Size > 0) and not SecureRandomBytes(PAnsiChar(Result), Size) then
+    raise Exception.Create('Falha ao obter bytes aleatorios seguros para o salt.');
 end;
 
 class function TArgon2.IdHashEncoded(const aPass: string): string;
