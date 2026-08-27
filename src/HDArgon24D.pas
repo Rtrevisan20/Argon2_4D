@@ -2,6 +2,20 @@ unit HDArgon24D;
 
 interface
 
+{$IF Defined(MSWINDOWS)}
+const
+  ARGON2_API_LIB = 'libargon2.dll';
+{$ELSEIF Defined(LINUX) or Defined(ANDROID)}
+const
+  ARGON2_API_LIB = 'libargon2.so';
+{$ELSEIF Defined(MACOS) or Defined(IOS)}
+const
+  ARGON2_API_LIB = 'libargon2.dylib';
+{$ELSE}
+const
+  ARGON2_API_LIB = 'libargon2.so';
+{$ENDIF}
+
 type
   size_t = NativeUInt;
 
@@ -37,14 +51,14 @@ function argon2_hash(
     encodedlen: NativeUInt; // length do encod
     argon2_type: integer; // Argon2 id = 2
     version: Cardinal // Argon2 Version = $13
-): integer; stdcall; external 'libargon2.dll';
+): integer;
 
 function argon2_verify(
     encoded: PAnsiChar; // Hash gerado
     pwd: Pointer; // password
     pwdlen: size_t; // length password
     Argon2Type: integer // Argon2 id = 2
-): integer; stdcall; external 'libargon2.dll';
+): integer;
 
 function argon2id_hash_encoded(
     t_cost: Cardinal; // ITERATIONS
@@ -57,13 +71,13 @@ function argon2id_hash_encoded(
     hashlen: size_t; // length do hash
     encoded: PAnsiChar; // array[0..255] of AnsiChar
     encodedlen: size_t // length do encod
-): integer; stdcall; external 'libargon2.dll';
+): integer;
 
 function argon2id_verify(
     encoded: PAnsiChar; // Hash gerado
     pwd: Pointer; // password
     pwdlen: size_t // length password
-): integer; stdcall; external 'libargon2.dll';
+): integer;
 
 function argon2_encodedlen(
     t_cost: Cardinal; // ITERATIONS
@@ -72,11 +86,11 @@ function argon2_encodedlen(
     saltlen: Cardinal; // length Salt
     hashlen: Cardinal; // length do hash
     Argon2Type: integer // Argon2 id = 2
-): size_t; stdcall; external 'libargon2.dll';
+): size_t;
 
 function argon2_error_message(
     error_code: integer // Code error
-): PAnsiChar; stdcall; external 'libargon2.dll';
+): PAnsiChar;
 
 const
   SALT_LEN        = 16;  //Tamanho do Salt Aleatorio
@@ -89,7 +103,220 @@ const
 implementation
 
 uses
-  System.SysUtils;
+  System.SysUtils
+{$IF Defined(MSWINDOWS)}
+  ,Winapi.Windows
+{$ENDIF}
+  ;
+
+type
+  TArgon2HashProc = function(
+      t_cost: Cardinal;
+      m_cost: Cardinal;
+      parallelism: Cardinal;
+      pwd: PAnsiChar;
+      pwdlen: NativeUInt;
+      salt: PAnsiChar;
+      saltlen: NativeUInt;
+      hash: Pointer;
+      hashlen: NativeUInt;
+      encoded: PAnsiChar;
+      encodedlen: NativeUInt;
+      argon2_type: integer;
+      version: Cardinal
+  ): integer; {$IF Defined(MSWINDOWS)} stdcall {$ELSE} cdecl {$ENDIF};
+
+  TArgon2VerifyProc = function(
+      encoded: PAnsiChar;
+      pwd: Pointer;
+      pwdlen: size_t;
+      Argon2Type: integer
+  ): integer; {$IF Defined(MSWINDOWS)} stdcall {$ELSE} cdecl {$ENDIF};
+
+  TArgon2idHashEncodedProc = function(
+      t_cost: Cardinal;
+      m_cost: Cardinal;
+      parallelism: Cardinal;
+      pwd: Pointer;
+      pwdlen: size_t;
+      salt: Pointer;
+      saltlen: size_t;
+      hashlen: size_t;
+      encoded: PAnsiChar;
+      encodedlen: size_t
+  ): integer; {$IF Defined(MSWINDOWS)} stdcall {$ELSE} cdecl {$ENDIF};
+
+  TArgon2idVerifyProc = function(
+      encoded: PAnsiChar;
+      pwd: Pointer;
+      pwdlen: size_t
+  ): integer; {$IF Defined(MSWINDOWS)} stdcall {$ELSE} cdecl {$ENDIF};
+
+  TArgon2EncodedLenProc = function(
+      t_cost: Cardinal;
+      m_cost: Cardinal;
+      parallelism: Cardinal;
+      saltlen: Cardinal;
+      hashlen: Cardinal;
+      Argon2Type: integer
+  ): size_t; {$IF Defined(MSWINDOWS)} stdcall {$ELSE} cdecl {$ENDIF};
+
+  TArgon2ErrorMessageProc = function(
+      error_code: integer
+  ): PAnsiChar; {$IF Defined(MSWINDOWS)} stdcall {$ELSE} cdecl {$ENDIF};
+
+var
+  FArgon2Handle: HMODULE;
+  FArgon2Loaded: Boolean;
+  FArgon2Lock: TObject;
+
+  argon2_hash_proc: TArgon2HashProc;
+  argon2_verify_proc: TArgon2VerifyProc;
+  argon2id_hash_encoded_proc: TArgon2idHashEncodedProc;
+  argon2id_verify_proc: TArgon2idVerifyProc;
+  argon2_encodedlen_proc: TArgon2EncodedLenProc;
+  argon2_error_message_proc: TArgon2ErrorMessageProc;
+
+function LoadArgon2Library: Boolean;
+begin
+  if FArgon2Loaded then
+    Exit(True);
+
+  TMonitor.Enter(FArgon2Lock);
+  try
+    if FArgon2Loaded then
+    begin
+      Result := True;
+      Exit;
+    end;
+
+    FArgon2Handle := SafeLoadLibrary(ARGON2_API_LIB);
+    if FArgon2Handle = 0 then
+      raise Exception.Create('Nao foi possivel carregar a biblioteca ' + ARGON2_API_LIB);
+
+    @argon2_hash_proc := GetProcAddress(FArgon2Handle, 'argon2_hash');
+    @argon2_verify_proc := GetProcAddress(FArgon2Handle, 'argon2_verify');
+    @argon2id_hash_encoded_proc := GetProcAddress(FArgon2Handle, 'argon2id_hash_encoded');
+    @argon2id_verify_proc := GetProcAddress(FArgon2Handle, 'argon2id_verify');
+    @argon2_encodedlen_proc := GetProcAddress(FArgon2Handle, 'argon2_encodedlen');
+    @argon2_error_message_proc := GetProcAddress(FArgon2Handle, 'argon2_error_message');
+
+    if (not Assigned(argon2_hash_proc)) or (not Assigned(argon2_verify_proc))
+      or (not Assigned(argon2id_hash_encoded_proc)) or (not Assigned(argon2id_verify_proc))
+      or (not Assigned(argon2_encodedlen_proc)) or (not Assigned(argon2_error_message_proc)) then
+      raise Exception.Create('A biblioteca ' + ARGON2_API_LIB
+        + ' não contém todas as funçõs esperadas.');
+
+    FArgon2Loaded := True;
+    Result := True;
+  finally
+    TMonitor.Exit(FArgon2Lock);
+  end;
+end;
+
+function argon2_hash(
+    t_cost: Cardinal;
+    m_cost: Cardinal;
+    parallelism: Cardinal;
+    pwd: PAnsiChar;
+    pwdlen: NativeUInt;
+    salt: PAnsiChar;
+    saltlen: NativeUInt;
+    hash: Pointer;
+    hashlen: NativeUInt;
+    encoded: PAnsiChar;
+    encodedlen: NativeUInt;
+    argon2_type: integer;
+    version: Cardinal
+): integer;
+begin
+  LoadArgon2Library;
+  Result := argon2_hash_proc(
+    t_cost,
+    m_cost,
+    parallelism,
+    pwd,
+    pwdlen,
+    salt,
+    saltlen,
+    hash,
+    hashlen,
+    encoded,
+    encodedlen,
+    argon2_type,
+    version
+  );
+end;
+
+function argon2_verify(
+    encoded: PAnsiChar;
+    pwd: Pointer;
+    pwdlen: size_t;
+    Argon2Type: integer
+): integer;
+begin
+  LoadArgon2Library;
+  Result := argon2_verify_proc(encoded, pwd, pwdlen, Argon2Type);
+end;
+
+function argon2id_hash_encoded(
+    t_cost: Cardinal;
+    m_cost: Cardinal;
+    parallelism: Cardinal;
+    pwd: Pointer;
+    pwdlen: size_t;
+    salt: Pointer;
+    saltlen: size_t;
+    hashlen: size_t;
+    encoded: PAnsiChar;
+    encodedlen: size_t
+): integer;
+begin
+  LoadArgon2Library;
+  Result := argon2id_hash_encoded_proc(
+    t_cost,
+    m_cost,
+    parallelism,
+    pwd,
+    pwdlen,
+    salt,
+    saltlen,
+    hashlen,
+    encoded,
+    encodedlen
+  );
+end;
+
+function argon2id_verify(
+    encoded: PAnsiChar;
+    pwd: Pointer;
+    pwdlen: size_t
+): integer;
+begin
+  LoadArgon2Library;
+  Result := argon2id_verify_proc(encoded, pwd, pwdlen);
+end;
+
+function argon2_encodedlen(
+    t_cost: Cardinal;
+    m_cost: Cardinal;
+    parallelism: Cardinal;
+    saltlen: Cardinal;
+    hashlen: Cardinal;
+    Argon2Type: integer
+): size_t;
+begin
+  LoadArgon2Library;
+  Result := argon2_encodedlen_proc(t_cost, m_cost, parallelism, saltlen, hashlen, Argon2Type);
+end;
+
+function argon2_error_message(
+    error_code: integer
+): PAnsiChar;
+begin
+  LoadArgon2Library;
+  Result := argon2_error_message_proc(error_code);
+end;
 
 class function TArgon2.ErrorMessage(const aCode: integer): string;
 begin
@@ -180,5 +407,13 @@ begin
       Length(aPass),
       ARGON2_id) = 0;
 end;
+
+initialization
+  FArgon2Lock := TObject.Create;
+
+finalization
+  if FArgon2Handle <> 0 then
+    FreeLibrary(FArgon2Handle);
+  FArgon2Lock.Free;
 
 end.
