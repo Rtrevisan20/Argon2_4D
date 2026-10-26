@@ -44,6 +44,23 @@ Support: rtinformatica.ti@gmail.com
 $ boss install github.com/Rtrevisan20/Argon2_4D
 ```
 
+O `boss.json` na raiz do repositório é obrigatório: a engine 3.x do Boss
+falha ao instalar dependências que não possuem esse arquivo.
+
+#### Versões
+
+O Boss resolve a versão pelas **tags do Git** (ex.: `0.0.6`), não pelo campo
+`version` do `boss.json`. Mantenha os dois em sincronia e crie a tag após
+alterar a versão:
+
+```sh
+# última versão (maior tag)
+$ boss install github.com/Rtrevisan20/Argon2_4D
+
+# versão específica
+$ boss install github.com/Rtrevisan20/Argon2_4D:0.0.6
+```
+
 #### Instalação Manual
 
 Adicione as seguintes pastas ao seu projeto, em _Project > Options > Delphi Compiler > Search path_

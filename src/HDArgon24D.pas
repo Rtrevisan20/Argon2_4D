@@ -107,6 +107,9 @@ uses
 {$IF Defined(MSWINDOWS)}
   ,Winapi.Windows
 {$ENDIF}
+{$IF Defined(POSIX)}
+  ,Posix.Unistd
+{$ENDIF}
   ;
 
 type

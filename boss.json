@@ -1,0 +1,8 @@
+{
+  "name": "hdargon2",
+  "description": "Binding Delphi cross-platform para o Argon2 (phc-winner-argon2), com carregamento dinâmico da lib nativa em runtime.",
+  "version": "0.0.6",
+  "homepage": "https://github.com/Rtrevisan20/Argon2_4D",
+  "mainsrc": "src/",
+  "dependencies": {}
+}
